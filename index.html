@@ -1,4 +1,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js"></script>
+<script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
+<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+
 <div id="app">
   <div id="editor" ref="editor" class="editor" contenteditable @keydown="keydown">
     <div v-for="line in lines" :type="line.type">{{line.title}}</div>
@@ -78,6 +81,12 @@ var app = new Vue({
     },
   },
   mounted() {
+    var ui = new firebaseui.auth.AuthUI(firebase.auth());
+    ui.start('#firebaseui-auth-container', {
+      signInOptions: [
+        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      ],
+    });
     if (localStorage.getItem("journal"))
       this.lines = JSON.parse(localStorage.getItem('journal'));
 
