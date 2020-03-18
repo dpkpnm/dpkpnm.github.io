@@ -1,14 +1,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js"></script>
 <div id="app">
   <div id="editor" ref="editor" class="editor" contenteditable @keydown="keydown">
-    <div></div>
+    <div v-for="line in lines" :type="line.type">{{line.title}}</div>
   </div>
 </div>
 <script>
 var app = new Vue({
   el: "#app",
   data: {
-    days: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    days: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+    lines: []
   },
   methods: {
     keydown: function(e) {
@@ -75,6 +76,11 @@ var app = new Vue({
       this.lines = lines;
       localStorage.setItem('journal', JSON.stringify(lines));
     },
+  },
+  mounted() {
+    if (localStorage.getItem("journal"))
+      this.lines = JSON.parse(localStorage.getItem('journal'));
+
   }
 })
 </script>
