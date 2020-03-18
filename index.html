@@ -1,140 +1,131 @@
-<template>
-  <div id="app">
-    <div ref="editor" class="editor" contenteditable v-shortkey="{next:['ctrl', '/'],save:['ctrl','s'],tab:['tab']}" @shortkey="changeListType">
-      <li v-for="(line,index) in lines" :key="index" :class="line.type">{{line.title}}</li>
-    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js"></script>
+<div id="app">
+  <div id="editor" ref="editor" class="editor" contenteditable @keydown="keydown">
+    <div></div>
   </div>
-</template>
+</div>
 <script>
-export default {
-  name: 'App',
-  data: function() {
-    return {
-      keys: ["note", "event", "task", "taskcomplete", "taskirrelevant", "taskmigrated", "taskscheduled"],
-      lines: [
-        { title: "F.13", type: "date" },
-        { type: "task", title: "task incomplete" },
-        { type: "taskcomplete", title: "task complete" },
-        { type: "taskirrelevant", title: "task irrelevant" },
-        { type: "taskmigrated", title: "task migrated" },
-        { type: "taskscheduled", title: "task scheduled in future log" },
-        { type: "note", title: "notes" },
-        { type: "event", title: "events" },
-        { title: "F.12", type: "date" },
-        { type: "task", title: "task incomplete" },
-        { type: "taskcomplete", title: "task complete" },
-        { type: "taskirrelevant", title: "task irrelevant" },
-        { type: "taskmigrated", title: "task migrated" },
-        { type: "taskscheduled", title: "task scheduled in future log" },
-        { type: "note", title: "notes" },
-        { type: "event", title: "events" },
-      ],
-      days: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-    }
+var app = new Vue({
+  el: "#app",
+  data: {
+    days: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
   },
   methods: {
-    changeListType(event) {
-      event.preventDefault();
-      var el = document.getSelection().focusNode.nodeType == 1 ? document.getSelection().focusNode : document.getSelection().focusNode.parentElement;
-      var cls = el.classList[0];
-      if (event.srcKey == 'next') {
-        el.classList.remove(cls);
-        var index = this.keys.indexOf(cls);
-        index = this.keys.length == index ? 0 : index + 1;
-        el.classList.add(this.keys[index]);
-      } else if (event.srcKey == 'save') {
+    keydown: function(e) {
+      if (e.ctrlKey && e.key == 'Tab') {
+        e.preventDefault();
+        this.insertAtCursor(document.createTextNode("\u00a0\u00a0"));
+      }
+      if (e.altKey && e.key == 'c') {
+        e.preventDefault();
+        this.type("code");
+      }
+      if (e.altKey && e.key == 'e') {
+        e.preventDefault();
+        this.type("event");
+      }
+      if (e.altKey && e.key == 'a') {
+        e.preventDefault();
+        this.type("action");
+      }
+      if (e.altKey && e.key == 'd') {
+        e.preventDefault();
+        this.type("dt");
+      }
+      if (e.ctrlKey && e.key == 's') {
+        e.preventDefault();
         this.save();
-      } else if (event.srcKey == 'tab') {
-        el.classList.add("m16")
-        debugger;
       }
     },
+    insertAtCursor: function(obj) {
+      var editor = document.getElementById("editor");
+      var range = editor.ownerDocument.defaultView.getSelection().getRangeAt(0);
+      range.insertNode(obj);
+      range.setStartAfter(obj);
+      range.setEndAfter(obj);
+    },
+    replaceClass: function(to, from) {
+      var el = this.getSrcElement();
+      if (from && el.classList.contains(from))
+        el.classList.replace(from, to);
+      else
+        el.classList.add(to);
+    },
+    getSrcElement: function() {
+      return document.getSelection().focusNode.nodeType == 1 ? document.getSelection().focusNode : document.getSelection().focusNode.parentElement;
+    },
+    type: function(val) {
+      if (this.getSrcElement().getAttribute("type") == val)
+        return this.getSrcElement().setAttribute("type", "");
+      if (val) {
+        return this.getSrcElement().setAttribute("type", val);
+      } else {
+        return this.getSrcElement().getAttribute("type");
+      }
+    },
+    getDate() {
+      var dt = new Date();
+      return this.days[dt.getDay()] + "." + dt.getDate();
+    },
     save() {
-      console.log(this.$refs.editor.children);
       var lines = [...this.$refs.editor.children].reduce((a, v) => {
-        a.push({ title: v.innerHTML, type: v.className });
+        a.push({ title: v.innerText, type: v.getAttribute("type") });
         return a;
       }, [])
       this.lines = lines;
       localStorage.setItem('journal', JSON.stringify(lines));
     },
-    getDate() {
-      var dt = new Date();
-      return this.days[dt.getDay()] + "." + dt.getDate();
-    }
-  },
-  mounted() {
-    if (localStorage.getItem("journal"))
-      this.lines = JSON.parse(localStorage.getItem('journal'));
-
   }
-}
+})
 </script>
 <style>
+* {
+  margin: 0;
+  padding: 0;
+}
 body {
   font-family: monospace, CustomSerif, Georgia, Cambria, Times New Roman, serif !important;
   color: #222;
   height: 100%;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 400;
+  margin: 2rem 0;
 }
-.date {
-  font-weight: bold;
-  color: #CCC;
-  margin-top: 24px
-}
-
 .editor {
-  margin: 64px auto;
+  margin: 0 auto;
   width: 800px;
+  height: 100vh;
   outline: none;
-  line-height: 1.6rem;
+  line-height: 2.2rem;
   white-space: pre-wrap;
-  display: block;
-
 }
-li {
-  list-style-type: none;
+.editor>div {
   display: flex;
 }
-li.taskirrelevant {
-  color: #ccc
-}
-li:before {
+.editor>div:before {
   margin-right: 16px;
   display: inline-block;
   padding-left: 8px;
-}
-li.event:before {
-  content: '\0260E';
-  font-size: 12px;
-  margin-right: 14px;
-}
-li.taskirrelevant:before, li.task:before {
-  content: '\02192';
-  font-size: 20px;
-}
-li.note:before {
   content: '\02022';
 }
-li.taskcomplete:before {
-  content: '\02713';
-  color: green;
-}
-li.undefined:before {
+.editor>div[type='code']:before {
   content: ' ';
 }
-
-li.taskscheduled:before {
-  content: '\02191';
-  font-size: 20px;
-  color: red;
+.editor>div[type='code'] {
+  background-color: #eee;
 }
-li.taskmigrated:before {
-  content: '\02193';
-  font-size: 20px;
+.editor>div[type='event']:before {
+  content: '\0260E';
 }
-li.m16 {
-  margin-left: 16px;
+.editor>div[type='action']:before {
+  content: '\02192';
+}
+.editor>div[type='dt'] {
+  font-weight: bold;
+  color: #aaa;
+}
+.editor>div[type='dt']:before {
+  content: '';
+  margin-right: 0px;
 }
 </style>
